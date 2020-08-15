@@ -1,34 +1,24 @@
  version: 0.2
  phases:
- install: 
+ 
+   install: 
      runtime-versions:
-     docker: 18
+       docker: 18
      commands: 
-     - apt-get update -y
-     - apt-get install -y jq
-     - curl -L https://npmjs.org/install.sh | sh
-     - npm -v
-     - curl -Ssl  https://get.docker.com | sudo sh
-     - groupadd docker
-     - sudo usermod -aG docker ubuntu
-     - COMPOSE_VERSION=`git ls-remote https://github.com/docker/compose | grep refs/tags | grep -oE "[0-9]+\.[0-9][0-9]+\.[0-9]+$" | sort --version-sort | tail -n 1`
-     - sh -c "curl -L https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose"
-     - chmod +x /usr/local/bin/docker-compose
-     - sh -c "curl -L https://raw.githubusercontent.com/docker/compose/${COMPOSE_VERSION}/contrib/completion/bash/docker-compose > /etc/bash_completion.d/docker-compose"
-     - cd /tmp
-     - git clone https://gist.github.com/76b450a0c986e576e98b.git
-     - cd 76b450a0c986e576e98b
-     - mv docker-cleanup /usr/local/bin/docker-cleanup
-     - chmod +x /usr/local/bin/docker-cleanup
-     - cd ~/environment/ecs-container-mono-project/
- build:
+       - apt-get update -y
+       - apt-get install -y jq
+       - curl -L https://npmjs.org/install.sh | sh
+       - npm -v
+       
+   build:
      commands:
-     - bash deploy.sh
-
- post_build:
+       - bash ./deploy.sh $REGION $STACK_NAME
+       
+   post_build:
      commands:
-     - echo "Nao acredito que chegou ate aqui !!!!"
-     
+       - IP=$(aws cloudformation --region $REGION describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='Url'].OutputValue" --output text)
+       - printf "http://$IP/api/users\nhttp://$IP/api/threads\nhttp://$IP/api/threads/1\nhttp://$IP/api/\nhttp://$IP/api/posts/by-user/2\n" > elb.txt
+       - cat elb.txt
  artifacts:
- files: 
+   files: 
      - elb.txt
